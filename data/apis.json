@@ -1,0 +1,242 @@
+[
+  {
+    "request": {
+      "url": "http://testfire.net/",
+      "method": "GET",
+      "headers": {
+        ...
+      },
+      "body": null
+    },
+    "response": {
+      "status": 200,
+      "statusText": "OK",
+      "headers": {
+        ...
+      },
+      "body": "Error fetching response body: response.text: Protocol error (Network.getResponseBody): No resource with given identifier found"
+    }
+  },
+  {
+    "request": {
+      "url": "http://testfire.net/index.jsp",
+      "method": "GET",
+      "headers": {
+        ...
+      },
+      "body": null
+    },
+    "response": {
+      "status": 200,
+      "statusText": "OK",
+      "headers": {
+        ...
+      },
+      "body": "Error fetching response body: response.text: Protocol error (Network.getResponseBody): No resource with given identifier found"
+    }
+  },
+  {
+    "request": {
+      "url": "http://testfire.net/login.jsp",
+      "method": "GET",
+      "headers": {
+        ...
+      },
+      "body": null
+    },
+    "response": {
+      "status": 200,
+      "statusText": "OK",
+      "headers": {
+        ...
+      },
+      "body": "Error fetching response body: response.text: Protocol error (Network.getResponseBody): No resource with given identifier found"
+    }
+  },
+  {
+    "request": {
+      "url": "http://testfire.net/doLogin",
+      "method": "POST",
+      "headers": {
+        ...
+      },
+      "body": "uid=test&passw=test&btnSubmit=Login"
+    },
+    "response": {
+      "status": 302,
+      "statusText": "Found",
+      "headers": {
+        ...
+      },
+      "body": "Cannot access response body: response.body: Response body is unavailable for redirect responses"
+    }
+  },
+  {
+    "request": {
+      "url": "http://testfire.net/login.jsp",
+      "method": "GET",
+      "headers": {
+        ...
+      },
+      "body": null
+    },
+    "response": {
+      "status": 200,
+      "statusText": "OK",
+      "headers": {
+        ...
+      },
+      "body": "Error fetching response body: response.text: Protocol error (Network.getResponseBody): No resource with given identifier found"
+    }
+  },
+  {
+    "request": {
+      "url": "http://testfire.net/index.jsp?content=inside_contact.htm",
+      "method": "GET",
+      "headers": {
+        ...
+      },
+      "body": null
+    },
+    "response": {
+      "status": 200,
+      "statusText": "OK",
+      "headers": {
+        ...
+      },
+      "body": "Error fetching response body: response.text: Protocol error (Network.getResponseBody): No resource with given identifier found"
+    }
+  },
+  {
+    "request": {
+      "url": "http://testfire.net/feedback.jsp",
+      "method": "GET",
+      "headers": {
+        ...
+      },
+      "body": null
+    },
+    "response": {
+      "status": 200,
+      "statusText": "OK",
+      "headers": {
+        ...
+      },
+      "body": "Error fetching response body: response.text: Protocol error (Network.getResponseBody): No resource with given identifier found"
+    }
+  },
+  {
+    "request": {
+      "url": "http://testfire.net/sendFeedback",
+      "method": "POST",
+      "headers": {
+        ...
+      },
+      "body": "cfile=comments.txt&name=Roo&email_addr=roo%40example.com&subject=Test+Subject&comments=This+is+a+test+comment+from+Roo.&submit=+Submit+"
+    },
+    "response": {
+      "status": 200,
+      "statusText": "OK",
+      "headers": {
+        ...
+      },
+      "body": "Error fetching response body: response.text: Protocol error (Network.getResponseBody): No resource with given identifier found"
+    }
+  },
+  {
+    "request": {
+      "url": "http://testfire.net/index.jsp?content=privacy.htm",
+      "method": "GET",
+      "headers": {
+        ...
+      },
+      "body": null
+    },
+    "response": {
+      "status": 200,
+      "statusText": "OK",
+      "headers": {
+        ...
+      },
+      "body": "Error fetching response body: response.text: Protocol error (Network.getResponseBody): No resource with given identifier found"
+    }
+  },
+  {
+    "request": {
+      "url": "http://testfire.net/index.jsp?content=security.htm",
+      "method": "GET",
+      "headers": {
+        ...
+      },
+      "body": null
+    },
+    "response": {
+      "status": 200,
+      "statusText": "OK",
+      "headers": {
+        ...
+      },
+      "body": "Error fetching response body: response.text: Protocol error (Network.getResponseBody): No resource with given identifier found"
+    }
+  },
+  {
+    "request": {
+      "url": "http://testfire.net/status_check.jsp",
+      "method": "GET",
+      "headers": {
+        ...
+      },
+      "body": null
+    },
+    "response": {
+      "status": 200,
+      "statusText": "OK",
+      "headers": {
+        ...
+      },
+      "body": "Error fetching response body: response.text: Protocol error (Network.getResponseBody): No resource with given identifier found"
+    }
+  },
+  {
+    "request": {
+      "url": "http://testfire.net/swagger/index.html",
+      "method": "GET",
+      "headers": {
+        ...
+      },
+      "body": null
+    },
+    "response": {
+      "status": 200,
+      "statusText": "OK",
+      "headers": {
+        ...
+      },
+      "body": "<!-- HTML for static distribution bundle build -->\r\n<!DOCTYPE html>\r\n<html lang=\"en\">\r\n ..."
+    }
+  },
+  {
+    "request": {
+      "url": "http://testfire.net/swagger/properties.json",
+      "method": "GET",
+      "headers": {
+        ...
+      },
+      "body": null
+    },
+    "response": {
+      "status": 200,
+      "statusText": "OK",
+      "headers": {
+        ...
+      },
+      "body": {
+        "basePath": "/api",
+        "paths": {
+          "/login": {
+            "get": {
+                ...
+      }
+    }
+  }
+]

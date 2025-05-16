@@ -1,0 +1,22 @@
+[GET] https://www.googletagmanager.com/gtag/js?id=G-CFT4V9NXFB&glv=1744803823 => [200] 
+[GET] https://v6.globalso.com/Globalso/css/style.css?glv=1744803823 => [200] OK
+[GET] https://v6.globalso.com/Globalso/libs/aos/aos.css?glv=1744803823 => [200] OK
+[GET] https://v6.globalso.com/Globalso/libs/aos/animate.min.css?glv=1744803823 => [200] OK
+[GET] https://v6.globalso.com/Globalso/css/common.css?glv=1744803823 => [200] OK
+[GET] https://v6.globalso.com/Globalso/js/jquery.min.js?glv=1744803823 => [200] OK
+[GET] https://v6.globalso.com/Globalso/libs/aos/common.js?glv=1744803823 => [200] OK
+[GET] https://fonts.googleapis.com/css2?display=swap&family=Dosis:wght@100;200;300;400;500;600;700;800;900&family=Syne:wght@100;200;300;400;500;600;700;800;900&family=Rajdhani:wght@100;200;300;400;500;600;700;800;900&family=Open%20Sans%20Condensed:wght@100;200;300;400;500;600;700;800;900&glv=1744803823 => [200] 
+[GET] https://ecdn6-nc.globalso.com/upload/p/286/image_other/2024-03/65e5836c8a3b737359.png => [200] OK
+[GET] https://ecdn6.globalso.com/upload/m/image_other/2023-10/653322fbb47d434625.png => [200] 
+[GET] https://ecdn6.globalso.com/upload/m/image_other/2023-10/653322fc1393410904.png => [200] 
+[GET] https://ecdn6.globalso.com/upload/m/image_other/2023-10/653322fc6d8c466390.png => [200] 
+[GET] https://ecdn6.globalso.com/upload/m/image_other/2023-10/653322fd2c92b97494.png => [200] 
+[GET] https://ecdn6.globalso.com/public/customerVisit.min.js?glv=1744803823 => [200] 
+[POST] https://www.google-analytics.com/g/collect?v=2&tid=G-CFT4V9NXFB&gtm=45je5571v9208341793za200&_p=1746891791605&gcd=13l3l3l3l1l1&npa=0&dma=0&tag_exp=101509157~103101750~103101752~103116025~103200001~103233427~103251618~103251620~103284320~103284322~103301114~103301116&cid=985734347.1746891754&ul=zh-cn&sr=1440x900&uaa=x86&uab=64&uafvl=Chromium%3B136.0.7103.93%7CGoogle%2520Chrome%3B136.0.7103.93%7CNot.A%252FBrand%3B99.0.0.0&uamb=0&uam=&uap=Windows&uapv=15.0.0&uaw=0&are=1&frm=0&pscdl=noapi&_eu=AAAAAAQ&_s=1&sid=1746891754&sct=1&seg=1&dl=https%3A%2F%2Fwww.xiaozihealth.com%2Fcontact-us%2F&dr=https%3A%2F%2Fwww.xiaozihealth.com%2Fabout-us%2F&dt=Contact%20Us%20-%20Xiaozhi%20Health&en=page_view&_ee=1&tfd=425 => [204] 
+[GET] https://ecdn6.globalso.com/fonts/fontawesome/fa-solid-900.woff2 => [200] 
+[GET] https://fonts.gstatic.com/s/dosis/v32/HhyaU5sn9vOmLzloC_U.woff2 => [200] 
+[GET] https://fonts.gstatic.com/s/syne/v22/8vIH7w4qzmVxm2BL9A.woff2 => [200] 
+[GET] https://ecdn6.globalso.com/upload/p/1/image_other/2025-04/q.png => [200] 
+[GET] https://ecdn6-nc.globalso.com/upload/p/2/image_other/2023-12/6572e052e908168675.png => [200] OK
+[POST] https://www.xiaozihealth.com/api/customerVisit/ => [200] 
+[POST] https://www.google-analytics.com/g/collect?v=2&tid=G-CFT4V9NXFB&gtm=45je5571v9208341793za200&_p=1746891791605&gcd=13l3l3l3l1l1&npa=0&dma=0&tag_exp=101509157~103101750~103101752~103116025~103200001~103233427~103251618~103251620~103284320~103284322~103301114~103301116&cid=985734347.1746891754&ul=zh-cn&sr=1440x900&uaa=x86&uab=64&uafvl=Chromium%3B136.0.7103.93%7CGoogle%2520Chrome%3B136.0.7103.93%7CNot.A%252FBrand%3B99.0.0.0&uamb=0&uam=&uap=Windows&uapv=15.0.0&uaw=0&are=1&frm=0&pscdl=noapi&_eu=AEAAAAQ&_s=2&sid=1746891754&sct=1&seg=1&dl=https%3A%2F%2Fwww.xiaozihealth.com%2Fcontact-us%2F&dr=https%3A%2F%2Fwww.xiaozihealth.com%2Fabout-us%2F&dt=Contact%20Us%20-%20Xiaozhi%20Health&en=scroll&epn.percent_scrolled=90&_et=2&tfd=5427 => [204]
