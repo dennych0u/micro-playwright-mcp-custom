@@ -16,8 +16,9 @@
 
 import { z } from 'zod';
 import { defineTool } from './tool.js';
-
-import type * as playwright from 'playwright';
+import type * as playwright from 'playwright'; // 如果不再直接使用 playwright 类型，可以移除
+// 新增: 导入 Redis 相关函数和类型
+import { getAllRequestsForPage, StoredRequestResponse } from '../redisClient.js'; 
 
 /**
  * Extracts the hostname from a URL string.
@@ -31,13 +32,10 @@ function extractDomain(url: string): string {
     const urlObj = new URL(url);
     return urlObj.hostname;
   } catch (e) {
-    // If new URL(url) fails, it might be that 'url' is already a hostname string
-    // or an invalid URL. We'll return it if it looks like a simple domain,
-    // otherwise an empty string. This is a basic check.
     if (/^[a-zA-Z0-9.-]+$/.test(url) && url.includes('.')) {
-        return url; // Treat as a potential hostname string
+        return url; 
     }
-    return ''; // Invalid URL and not a simple hostname-like string
+    return ''; 
   }
 }
 
@@ -49,11 +47,10 @@ function extractDomain(url: string): string {
  */
 function urlMatchesHostname(requestUrl: string, targetHostname: string): boolean {
   const requestHostname = extractDomain(requestUrl);
-  // Ensure both extracted requestHostname and targetHostname are valid and match
   return requestHostname !== '' && targetHostname !== '' && requestHostname === targetHostname;
 }
 
-async function processRequestResponsePair(request: playwright.Request, response: playwright.Response | null) {
+async function processRequestResponsePair(request: playwright.Request, response: playwright.Response | null) { // 已移除
   let requestBody: any = null;
   const postDataBuffer = request.postDataBuffer();
   if (postDataBuffer) {
@@ -156,7 +153,7 @@ const detailedNetworkRequestsTool = defineTool({
   schema: {
     name: 'browser_network_requests',
     title: 'List detailed network requests',
-    description: 'Returns detailed information for network requests and responses, filtered by resource types and optionally by a target hostname.',
+    description: 'Returns detailed information for network requests and responses from Redis, filtered by resource types and optionally by a target hostname.',
     inputSchema: z.object({
       resource_types: z.array(z.string()).min(1).describe('Required array of resource types to filter by (e.g., ["fetch", "xhr", "script"]). At least one type must be specified.'),
       target_domain: z.string().optional().describe('Optional hostname to filter network requests. Only requests where the URL\'s hostname exactly matches this value will be returned (e.g., "www.example.com"). Inputting a full URL will attempt to extract the hostname.'),
@@ -166,8 +163,24 @@ const detailedNetworkRequestsTool = defineTool({
 
   handle: async (context, params) => {
     const tab = context.currentTabOrDie();
-    const requestsMap = tab.requests();
-    const detailedRequestPromises: Promise<any>[] = [];
+    let allRequestsFromRedis: StoredRequestResponse[];
+    try {
+      // 从 Redis 获取当前 Tab 的所有请求数据
+      allRequestsFromRedis = await getAllRequestsForPage(tab.pageId);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`Failed to get requests for page ${tab.pageId} from Redis:`, errorMessage);
+      return {
+        code: [`// Error fetching requests from Redis: ${errorMessage}`],
+        action: async () => ({
+          content: [{ type: 'text', text: `Error fetching requests from Redis: ${errorMessage}` }]
+        }),
+        captureSnapshot: false,
+        waitForNetwork: false,
+      };
+    }
+    
+    const filteredRequests: StoredRequestResponse[] = [];
 
     let effectiveTargetHostname: string | undefined = undefined;
     if (params.target_domain) {
@@ -175,50 +188,37 @@ const detailedNetworkRequestsTool = defineTool({
         if (cleanedInput) {
             effectiveTargetHostname = extractDomain(cleanedInput);
             if (!effectiveTargetHostname) {
-                // If cleanedInput was provided but extractDomain failed to get a valid hostname,
-                // it means no request can match this invalid target.
-                // So, we can effectively return an empty list by setting a flag or handling it.
-                // For now, if effectiveTargetHostname is empty, urlMatchesHostname will always be false.
+                // 如果 target_domain 无效，则没有请求能匹配
             }
-        } else {
-            // User provided target_domain as empty or whitespace.
-            // This means no domain should match.
-            // We can set effectiveTargetHostname to a value that won't match anything,
-            // or handle this by returning empty results early.
-            // For simplicity, if it's empty, urlMatchesHostname will handle it.
         }
     }
 
-    for (const [request, response] of requestsMap.entries()) {
-      const currentResourceType = request.resourceType();
+    for (const storedEntry of allRequestsFromRedis) {
+      const currentResourceType = storedEntry.request.resourceType;
 
-      // 1. Filter by resource_types (mandatory)
       if (!params.resource_types.includes(currentResourceType)) {
         continue;
       }
 
-      // 2. Filter by target_domain (optional)
-      if (params.target_domain) { // Only apply domain filter if target_domain was provided
+      if (params.target_domain) { 
         if (!effectiveTargetHostname) {
-            // User specified a target_domain, but it resolved to an invalid/empty hostname.
-            // Therefore, no request should match this domain filter.
-            continue;
+            continue; // 无效的目标域名，跳过所有
         }
-        if (!urlMatchesHostname(request.url(), effectiveTargetHostname)) {
-          continue; // Skip if hostname doesn't match
+        if (!urlMatchesHostname(storedEntry.request.url, effectiveTargetHostname)) {
+          continue; 
         }
       }
       
-      detailedRequestPromises.push(processRequestResponsePair(request, response));
+      // StoredRequestResponse 结构已包含所需信息
+      filteredRequests.push(storedEntry);
     }
 
-    const detailedRequests = await Promise.all(detailedRequestPromises);
     const resourceTypesString = params.resource_types.join(', ');
-    let logMessage = `// <internal code to list detailed network requests of type(s) [${resourceTypesString}]`;
+    let logMessage = `// <internal code to list detailed network requests of type(s) [${resourceTypesString}] from Redis`;
     if (effectiveTargetHostname) {
         logMessage += ` for hostname "${effectiveTargetHostname}"`;
-    } else if (params.target_domain) {
-        logMessage += ` (invalid target_domain provided: "${params.target_domain}")`;
+    } else if (params.target_domain) { // 用户提供了 target_domain 但它解析为空/无效
+        logMessage += ` (invalid or empty target_domain provided: "${params.target_domain}")`;
     }
     logMessage += '>';
 
@@ -226,7 +226,8 @@ const detailedNetworkRequestsTool = defineTool({
       code: [logMessage],
       action: async () => {
         return {
-          content: [{ type: 'text', text: JSON.stringify(detailedRequests, null, 2) }]
+          // 返回的 filteredRequests 已经是 StoredRequestResponse[] 结构
+          content: [{ type: 'text', text: JSON.stringify(filteredRequests, null, 2) }]
         };
       },
       captureSnapshot: false,

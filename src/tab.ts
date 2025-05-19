@@ -20,40 +20,59 @@ import { PageSnapshot } from './pageSnapshot.js';
 
 import type { Context } from './context.js';
 
+// 新增: 导入 Redis 相关函数和类型
+import { storeRequest, storeResponse, clearRequestsForPage, generatePageId } from './redisClient.js';
+
 export class Tab {
   readonly context: Context;
   readonly page: playwright.Page;
+  readonly pageId: string; // 新增: 用于 Redis 键作用域的唯一页面ID
   private _consoleMessages: playwright.ConsoleMessage[] = [];
-  private _requests: Map<playwright.Request, playwright.Response | null> = new Map();
-  private readonly MAX_REQUESTS_TO_KEEP = 400; // 新增：定义保留请求的最大数量
+  // private _requests: Map<playwright.Request, playwright.Response | null> = new Map(); // 已移除
+  // private readonly MAX_REQUESTS_TO_KEEP = 400; // 已移除
   private _snapshot: PageSnapshot | undefined;
   private _onPageClose: (tab: Tab) => void;
+  // 新增: 临时存储 Playwright Request 对象到其 Redis 键的映射
+  private _pendingRequests: Map<playwright.Request, string> = new Map(); 
 
   constructor(context: Context, page: playwright.Page, onPageClose: (tab: Tab) => void) {
     this.context = context;
     this.page = page;
+    this.pageId = generatePageId(); // 新增: 为此 Tab 实例生成唯一 ID
     this._onPageClose = onPageClose;
     page.on('console', event => this._consoleMessages.push(event));
-    page.on('request', request => {
-      this._requests.set(request, null);
-      this._manageRequestsLimit(); // 新增：在添加新请求后管理请求数量
+
+    page.on('request', async request => {
+      if (request.url().startsWith('data:')) return; // 忽略 data URI
+      try {
+        const requestKey = await storeRequest(this.pageId, request);
+        this._pendingRequests.set(request, requestKey);
+      } catch (error) {
+        console.error(`Failed to store request ${request.url()} in Redis:`, error);
+      }
     });
 
-    this.page.on('response', response => {
-      // 确保请求对象存在于映射中（通常 'request' 事件会先触发）
-      // 如果请求因某些原因（例如，从缓存提供服务而没有触发 'request' 事件，尽管不太可能用于XHR/fetch）
-      // 或者如果这是一个非常快速失败的请求，可能需要更复杂的逻辑，
-      // 但对于标准流程，请求应该已经存在。
-      if (this._requests.has(response.request()) || !response.request().url().startsWith('data:')) {
-        // 对于data: URL的响应，可能没有对应的 'request' 事件先被记录到 _requests 中，
-        // 但这些通常不是我们关心的 "API" 请求，所以可以安全地更新或添加。
-        // 如果 response.request() 不在 _requests 中，并且不是 data URI，
-        // 那么我们仍然添加它并管理限制。
-        if (!this._requests.has(response.request()) && !response.request().url().startsWith('data:')) {
-            this._requests.set(response.request(), response);
-            this._manageRequestsLimit(); // 如果是新条目，则管理限制
-        } else if (this._requests.has(response.request())) {
-            this._requests.set(response.request(), response); // 仅更新，不改变大小
+    this.page.on('response', async response => {
+      const request = response.request();
+      if (request.url().startsWith('data:')) return; // 忽略 data URI
+
+      const requestKey = this._pendingRequests.get(request);
+
+      if (requestKey) {
+        try {
+          await storeResponse(requestKey, response);
+        } catch (error) {
+          console.error(`Failed to store response for ${request.url()} in Redis:`, error);
+        }
+        this._pendingRequests.delete(request); 
+      } else {
+        // 如果请求未被追踪 (例如，请求事件丢失或非常快)，尝试一并存储请求和响应
+        // console.warn(`Response received for untracked request: ${response.url()}. Attempting to store now.`);
+        try {
+            const newRequestKey = await storeRequest(this.pageId, request);
+            await storeResponse(newRequestKey, response);
+        } catch (error) {
+            console.error(`Failed to store ad-hoc request/response for ${request.url()} in Redis:`, error);
         }
       }
     });
@@ -61,7 +80,7 @@ export class Tab {
     this.page.on('console', message => {
       this._consoleMessages.push(message);
     });
-    page.on('close', () => this._onClose());
+    page.on('close', () => this._onClose()); // 确保 _onClose 被调用
     page.on('filechooser', chooser => {
       this.context.setModalState({
         type: 'fileChooser',
@@ -77,32 +96,28 @@ export class Tab {
     page.setDefaultTimeout(5000);
   }
 
-  // 新增：管理请求列表大小的方法
-  private _manageRequestsLimit() {
-    while (this._requests.size > this.MAX_REQUESTS_TO_KEEP) {
-      // Map 会记住插入顺序，所以第一个 key 是最早的
-      const oldestRequestKey = this._requests.keys().next().value;
-      if (oldestRequestKey) {
-        this._requests.delete(oldestRequestKey);
-      } else {
-        // 如果没有 key 了（理论上在 size > 0 时不应发生），则退出循环
-        break;
-      }
-    }
-  }
+  // private _manageRequestsLimit() { // 已移除
+  // ...
+  // }
 
-  private _clearCollectedArtifacts() {
+  private async _clearCollectedArtifacts() { // 修改为 async
     this._consoleMessages.length = 0;
-    this._requests.clear();
+    try {
+      // 清理与此 pageId 关联的 Redis 中的请求
+      await clearRequestsForPage(this.pageId);
+    } catch (error) {
+      console.error(`Failed to clear requests for page ${this.pageId} from Redis:`, error);
+    }
+    this._pendingRequests.clear(); // 清理待处理请求的映射
   }
 
-  private _onClose() {
-    this._clearCollectedArtifacts();
+  private async _onClose() { // 修改为 async
+    await this._clearCollectedArtifacts(); // 确保 Redis 清理被等待
     this._onPageClose(this);
   }
 
   async navigate(url: string) {
-    this._clearCollectedArtifacts();
+    await this._clearCollectedArtifacts(); // 导航前清理当前 pageId 的残留数据
 
     const downloadEvent = this.page.waitForEvent('download').catch(() => {});
     try {
@@ -142,9 +157,9 @@ export class Tab {
     return this._consoleMessages;
   }
 
-  requests(): Map<playwright.Request, playwright.Response | null> {
-    return this._requests;
-  }
+  // requests(): Map<playwright.Request, playwright.Response | null> { // 已移除
+  // return this._requests;
+  // }
 
   async captureSnapshot() {
     this._snapshot = await PageSnapshot.create(this.page);

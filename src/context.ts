@@ -24,6 +24,8 @@ import * as playwright from 'playwright';
 import { waitForCompletion } from './tools/utils.js';
 import { ManualPromise } from './manualPromise.js';
 import { Tab } from './tab.js';
+// 修改: 导入 initializeRedisConnection
+import { disconnectRedis, clearRequestsForPage, initializeRedisConnection } from './redisClient.js'; 
 
 import type { ImageContent, TextContent } from '@modelcontextprotocol/sdk/types.js';
 import type { ModalState, Tool, ToolActionResult } from './tools/tool.js';
@@ -264,33 +266,57 @@ ${code.join('\n')}
       this._currentTab = tab;
   }
 
-  private _onPageClosed(tab: Tab) {
+  private async _onPageClosed(tab: Tab) { // 确保 _onPageClosed 是 async
     this._modalStates = this._modalStates.filter(state => state.tab !== tab);
     const index = this._tabs.indexOf(tab);
     if (index === -1)
       return;
     this._tabs.splice(index, 1);
 
+    // tab._onClose() 内部已经调用了 await tab._clearCollectedArtifacts();
+    // _clearCollectedArtifacts 内部调用了 clearRequestsForPage(tab.pageId)
+    // 所以这里不需要再次显式调用 clearRequestsForPage
+
     if (this._currentTab === tab)
       this._currentTab = this._tabs[Math.min(index, this._tabs.length - 1)];
-    if (this._browserContext && !this._tabs.length)
-      void this.close();
+    if (this._browserContext && !this._tabs.length) { // 当最后一个 tab 关闭时
+      // 如果这是最后一个 tab，并且我们打算关闭整个浏览器上下文
+      // 可以在这里考虑关闭 Redis 连接，或者在更上层的 close() 中处理
+    }
   }
+
 
   async close() {
     if (!this._browserContext)
       return;
+    
+    // 在关闭浏览器上下文之前，确保所有 tab 的资源（包括 Redis 数据）已清理
+    // Tab 的 _onClose 方法（由 page.on('close') 触发）会调用 _clearCollectedArtifacts
+    // _clearCollectedArtifacts 负责清理对应 pageId 的 Redis 数据
+    // 因此，理论上当所有页面关闭时，其关联的 Redis 数据已被清理。
+
     const browserContext = this._browserContext;
     const browser = this._browser;
     this._createBrowserContextPromise = undefined;
     this._browserContext = undefined;
     this._browser = undefined;
+    this._currentTab = undefined;
+    this._tabs = []; // 清空 tabs 数组
 
     await browserContext?.close().then(async () => {
       await browser?.close();
-    }).catch(() => {});
-  }
+    }).catch((err) => {
+        console.error("Error closing browser context or browser:", err);
+    });
 
+    // 在应用退出或主要上下文关闭时断开 Redis 连接
+    try {
+      await disconnectRedis();
+      console.log('Disconnected from Redis.');
+    } catch (error) {
+      console.error('Error disconnecting from Redis:', error);
+    }
+  }
   private async _setupRequestInterception(context: playwright.BrowserContext) {
     if (this.config.network?.allowedOrigins?.length) {
       await context.route('**', route => route.abort('blockedbyclient'));
@@ -329,6 +355,15 @@ ${code.join('\n')}
   }
 
   private async _innerCreateBrowserContext(): Promise<{ browser?: playwright.Browser, browserContext: playwright.BrowserContext }> {
+    // 新增: 在创建浏览器上下文之前，确保 Redis 连接已初始化
+    try {
+      await initializeRedisConnection();
+    } catch (error) {
+      // 如果 Redis 初始化失败是致命的，可以在这里处理或让错误传播
+      console.error('Critical: Redis connection failed during context creation. Proceeding without Redis might lead to data loss.', error);
+      // throw new Error('Failed to initialize Redis, cannot create browser context.'); // 可选：如果Redis是硬依赖
+    }
+
     if (this.config.browser?.remoteEndpoint) {
       const url = new URL(this.config.browser?.remoteEndpoint);
       if (this.config.browser.browserName)

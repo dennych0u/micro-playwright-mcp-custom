@@ -114,6 +114,9 @@ export function startHttpTransport(config: Config, port: number, hostname: strin
     else
       await handleSSE(config, req, res, url, sseSessions, connectionList);
   });
+
+  httpServer.timeout = 0; // 禁用服务器套接字的空闲超时
+
   httpServer.listen(port, hostname, () => {
     const address = httpServer.address();
     assert(address, 'Could not bind server socket');
